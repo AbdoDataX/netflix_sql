@@ -1,209 +1,203 @@
 # Netflix Movies and TV Shows Data Analysis using SQL
 
-![Netflix logo](https://github.com/user-attachments/assets/5182c680-2081-4e0d-8f80-565c5be19557)
+![Netflix logo](https://github.com/user-attachments/assets/5182c680-2081-4e0d-8f80-565c5be19557){ width=300 }
 
 
-Here’s your project write-up in the same structured format as the example you provided:  
+### **Netflix Data Analysis Using SQL Server**  
+
+#### **Overview**  
+This project aims to analyze Netflix's movie and TV show data to extract valuable insights and answer key business questions. SQL queries are used to analyze content types, geographical distribution, ratings, duration, and other aspects of the available content.  
+
+#### **Objectives**  
+1. Analyze the distribution of content between movies and TV shows.  
+2. Identify the most common ratings for movies and TV shows.  
+3. Explore content based on release years, countries, and durations.  
+4. Categorize and analyze content based on specific criteria and keywords.  
+
+#### **Dataset Source**  
+The dataset was sourced from Kaggle and can be accessed via the following link:  
+[Netflix Dataset on Kaggle](https://www.kaggle.com/datasets/shivamb/netflix-shows?resource=download)  
 
 ---
 
-# **Retail Sales Analysis Using SQL**  
+### **Business Problems and Solutions**  
 
-## **Project Overview**  
-**Title:** Retail Sales Analysis  
-**Database:** SQL - Retail_Sales_Analysis  
-
-This project aims to analyze retail sales data using SQL to extract valuable insights into sales performance, customer behavior, and key business trends. The project includes database setup, data cleaning, execution of analytical queries, and the creation of detailed reports to help business owners make data-driven decisions.  
-
-## **Project Objectives**  
-✅ Setting up a structured database and organizing data.  
-✅ Cleaning the data and ensuring it is error-free.  
-✅ Analyzing data to answer key business questions.  
-✅ Creating reports to support data-driven decision-making.  
-
-## **Project Structure**  
-
-### **1. Database Setup**  
-The project begins by creating the `retail_sales` table within the `Retail_Sales_Analysis` database, containing details of each sales transaction, such as transaction ID, date, customer details, category, price, cost, and total sales value.  
-
+#### **1. Count the Number of Movies vs. TV Shows**  
 ```sql
--- SQL Retail Sales Analysis
-
--- Drop the table if it already exists
-DROP TABLE IF EXISTS retail_sales;
-
--- Create the retail_sales table
-CREATE TABLE retail_sales (
-    transaction_id INT PRIMARY KEY,
-    sale_date DATE,
-    sale_time TIME,
-    customer_id INT,
-    gender VARCHAR(15),
-    age INT,
-    category VARCHAR(50),
-    quantity INT,
-    price_per_unit FLOAT,
-    cogs FLOAT,
-    total_sale FLOAT
-);
-
--- Retrieve the first 10 records
-SELECT TOP 10 * FROM retail_sales;
+SELECT 
+    type, 
+    COUNT(*) AS count 
+FROM netflix_titles$
+GROUP BY type;
 ```
+**Objective:** Determine the distribution of content types on Netflix.  
 
-### **2. Data Cleaning**  
-This step involves checking for and removing missing values to maintain data integrity.  
-
+#### **2. Find the Most Common Rating for Movies and TV Shows**  
 ```sql
--- Identify missing values
-SELECT * FROM retail_sales WHERE 
-    transaction_id IS NULL OR 
-    sale_date IS NULL OR 
-    sale_time IS NULL OR 
-    gender IS NULL OR 
-    category IS NULL OR 
-    quantity IS NULL OR 
-    cogs IS NULL OR 
-    total_sale IS NULL;
-
--- Delete records with missing values
-DELETE FROM retail_sales WHERE 
-    transaction_id IS NULL OR 
-    sale_date IS NULL OR 
-    sale_time IS NULL OR 
-    gender IS NULL OR 
-    category IS NULL OR 
-    quantity IS NULL OR 
-    cogs IS NULL OR 
-    total_sale IS NULL;
+WITH RatingCounts AS (
+    SELECT 
+        type, 
+        rating, 
+        COUNT(*) AS rating_count
+    FROM netflix_titles$
+    GROUP BY type, rating
+),
+RankedRatings AS (
+    SELECT 
+        type, 
+        rating, 
+        rating_count, 
+        RANK() OVER (PARTITION BY type ORDER BY rating_count DESC) AS rank
+    FROM RatingCounts
+)
+SELECT 
+    type, 
+    rating AS most_frequent_rating
+FROM RankedRatings
+WHERE rank = 1;
 ```
+**Objective:** Identify the most frequently occurring rating for each type of content.  
 
-### **3. Data Exploration**  
-Initial data analysis includes:  
-✅ Determining the total number of sales transactions.  
-✅ Counting the number of unique customers.  
-✅ Listing different product categories.  
-
+#### **3. List All Movies Released in a Specific Year (e.g., 2020)**  
 ```sql
--- Total number of transactions
-SELECT COUNT(*) AS total_sales FROM retail_sales;
-
--- Number of unique customers
-SELECT COUNT(DISTINCT customer_id) FROM retail_sales;
-
--- Different product categories
-SELECT DISTINCT category FROM retail_sales;
+SELECT * 
+FROM netflix_titles$
+WHERE release_year = 2020;
 ```
+**Objective:** Retrieve all movies released in a specific year.  
 
-### **4. Data Analysis & Business Insights**  
-
-#### **Q1: Retrieve all sales transactions for a specific date**  
-```sql
-SELECT * FROM retail_sales WHERE sale_date = '2023-01-05';
-```
-
-#### **Q2: Retrieve all transactions where category is "Clothing" and quantity sold is more than 10 in November 2023**  
-```sql
-SELECT * FROM retail_sales 
-WHERE category = 'Clothing' 
-AND sale_date BETWEEN '2023-11-01' AND '2023-11-30' 
-AND quantity > 10;
-```
-
-#### **Q3: Calculate total sales for each product category**  
-```sql
-SELECT category, SUM(quantity * price_per_unit) AS total_sales 
-FROM retail_sales 
-GROUP BY category;
-```
-
-#### **Q4: Determine the average age of customers who purchased beauty products**  
-```sql
-SELECT AVG(age) AS average_age 
-FROM retail_sales 
-WHERE category = 'Beauty';
-```
-
-#### **Q5: Retrieve all high-value transactions where total sales exceed $1000**  
-```sql
-SELECT transaction_id, total_sale 
-FROM retail_sales 
-WHERE total_sale > 1000;
-```
-
-#### **Q6: Count total transactions by gender and product category**  
-```sql
-SELECT COUNT(transaction_id) AS total_transactions, gender, category 
-FROM retail_sales 
-GROUP BY gender, category;
-```
-
-#### **Q7: Calculate average sales per month and determine the best-selling month each year**  
-```sql
-SELECT TOP 3 
-    YEAR(sale_date) AS year, 
-    MONTH(sale_date) AS month, 
-    AVG(quantity) AS avg_sales 
-FROM retail_sales 
-GROUP BY YEAR(sale_date), MONTH(sale_date) 
-ORDER BY avg_sales DESC;
-```
-
-#### **Q8: Find the top 5 customers with the highest total purchases**  
+#### **4. Find the Top 5 Countries with the Most Content on Netflix**  
 ```sql
 SELECT TOP 5 
-    customer_id, 
-    SUM(total_sale) AS total_sales 
-FROM retail_sales 
-GROUP BY customer_id 
-ORDER BY total_sales DESC;
+    country, 
+    COUNT(*) AS total_content
+FROM netflix_titles$
+WHERE country IS NOT NULL
+GROUP BY country
+ORDER BY total_content DESC;
 ```
+**Objective:** Identify the top 5 countries with the highest number of content items.  
 
-#### **Q9: Determine the number of unique customers for each product category**  
+#### **5. Identify the Longest Movie**  
 ```sql
-SELECT category, COUNT(DISTINCT customer_id) AS unique_customers 
-FROM retail_sales 
-GROUP BY category;
+SELECT TOP 1 *
+FROM netflix_titles$
+WHERE type = 'Movie'
+ORDER BY CAST(SUBSTRING(duration, 1, CHARINDEX(' ', duration) - 1) AS INT) DESC;
 ```
+**Objective:** Find the movie with the longest duration.  
 
-#### **Q10: Categorize sales into different time-based shifts (Morning, Afternoon, Evening) and count the number of orders in each shift**  
+#### **6. Find Content Added in the Last 5 Years**  
+```sql
+SELECT * 
+FROM netflix_titles$
+WHERE date_added IS NOT NULL 
+AND YEAR(CAST(date_added AS DATE)) >= YEAR(GETDATE()) - 5;
+```
+**Objective:** Retrieve content added to Netflix in the last 5 years.  
+
+#### **7. Find All Movies/TV Shows by a Specific Director (e.g., 'Rajiv Chilaka')**  
+```sql
+SELECT * 
+FROM netflix_titles$
+WHERE director LIKE '%Rajiv Chilaka%';
+```
+**Objective:** List all content directed by 'Rajiv Chilaka'.  
+
+#### **8. List All TV Shows with More Than 5 Seasons**  
+```sql
+SELECT * 
+FROM netflix_titles$
+WHERE type = 'TV Show' 
+AND CAST(SUBSTRING(duration, 1, CHARINDEX(' ', duration) - 1) AS INT) > 5;
+```
+**Objective:** Identify TV shows with more than 5 seasons.  
+
+#### **9. Count the Number of Content Items in Each Genre**  
+```sql
+SELECT 
+    listed_in AS genre, 
+    COUNT(*) AS total_content
+FROM netflix_titles$
+GROUP BY listed_in
+ORDER BY total_content DESC;
+```
+**Objective:** Count the number of content items in each genre.  
+
+#### **10. Find the Top 5 Years with the Highest Average Content Releases in India**  
+```sql
+SELECT TOP 5 
+    release_year, 
+    COUNT(show_id) AS total_releases,
+    ROUND(COUNT(show_id) * 100.0 / 
+        (SELECT COUNT(show_id) FROM netflix_titles$ WHERE country = 'India'), 2) AS avg_release_percentage
+FROM netflix_titles$
+WHERE country = 'India'
+GROUP BY release_year
+ORDER BY avg_release_percentage DESC;
+```
+**Objective:** Calculate and rank years by the average number of content releases in India.  
+
+#### **11. List All Movies that are Documentaries**  
+```sql
+SELECT * 
+FROM netflix_titles$
+WHERE listed_in LIKE '%Documentaries%';
+```
+**Objective:** Retrieve all movies classified as documentaries.  
+
+#### **12. Find All Content Without a Director**  
+```sql
+SELECT * 
+FROM netflix_titles$
+WHERE director IS NULL;
+```
+**Objective:** List content that does not have a director.  
+
+#### **13. Find How Many Movies Actor 'Salman Khan' Appeared in the Last 10 Years**  
+```sql
+SELECT * 
+FROM netflix_titles$
+WHERE casts LIKE '%Salman Khan%' 
+AND release_year >= YEAR(GETDATE()) - 10;
+```
+**Objective:** Count the number of movies featuring 'Salman Khan' in the last 10 years.  
+
+#### **14. Find the Top 10 Actors Who Have Appeared in the Highest Number of Movies Produced in India**  
+```sql
+SELECT TOP 10 
+    casts AS actor, 
+    COUNT(*) AS movie_count
+FROM netflix_titles$
+WHERE country = 'India'
+GROUP BY casts
+ORDER BY movie_count DESC;
+```
+**Objective:** Identify the top 10 actors with the most appearances in Indian-produced movies.  
+
+#### **15. Categorize Content Based on the Presence of 'Kill' and 'Violence' Keywords**  
 ```sql
 SELECT 
     CASE 
-        WHEN DATEPART(HOUR, sale_time) <= 12 THEN 'Morning' 
-        WHEN DATEPART(HOUR, sale_time) <= 17 THEN 'Afternoon' 
-        ELSE 'Evening' 
-    END AS shift, 
-    COUNT(*) AS total_orders 
-FROM retail_sales 
-GROUP BY 
-    CASE 
-        WHEN DATEPART(HOUR, sale_time) <= 12 THEN 'Morning' 
-        WHEN DATEPART(HOUR, sale_time) <= 17 THEN 'Afternoon' 
-        ELSE 'Evening' 
-    END 
-ORDER BY total_orders DESC;
+        WHEN description LIKE '%kill%' OR description LIKE '%violence%' THEN 'Bad'
+        ELSE 'Good'
+    END AS category,
+    COUNT(*) AS content_count
+FROM netflix_titles$
+GROUP BY CASE 
+        WHEN description LIKE '%kill%' OR description LIKE '%violence%' THEN 'Bad'
+        ELSE 'Good'
+    END;
 ```
+**Objective:** Categorize content as 'Bad' if it contains 'kill' or 'violence' and 'Good' otherwise. Count the number of items in each category.  
 
-## **Findings**  
-📌 **Top-performing categories** can help optimize marketing and inventory management.  
-📌 **Peak sales hours** show when customer traffic is highest.  
-📌 **Demographic trends** allow for personalized customer targeting.  
-📌 **Top-spending customers** can be targeted with exclusive offers.  
+---
 
-## **Reports Available**  
-📊 **Daily Sales Summary**  
-📊 **Most Profitable Product Categories**  
-📊 **Monthly Sales Trends**  
-📊 **Customer Demographics Analysis**  
-📊 **Top-Spending Customers Report**  
+### **Findings and Conclusions**  
+- **Content Distribution:** The dataset contains a diverse range of movies and TV shows with varying ratings and genres.  
+- **Common Ratings:** Insights into the most common ratings help understand the content’s target audience.  
+- **Geographical Insights:** The top countries and the average content releases by India highlight regional content distribution.  
+- **Content Categorization:** Categorizing content based on specific keywords provides insights into the nature of Netflix’s available content.  
 
-## **Conclusion**  
-This project provides a **comprehensive analysis of retail sales**, extracting key insights into sales trends and customer behavior. Business owners can leverage these findings to **enhance their strategies and make data-driven decisions**.  
-
-## **How to Use**  
-1️⃣ Run queries to extract relevant insights.  
-2️⃣ Analyze results to generate accurate reports.  
-3️⃣ Modify and extend by adding advanced analytics.  
 
 
