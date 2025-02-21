@@ -1,16 +1,4 @@
 
-Project Overview
-Title: Retail Sales Analysis
-Database: SQL - Retail_Sales_Analysis
-
-This project aims to analyze retail sales data using SQL to extract valuable insights into sales performance, customer behavior, and key business trends. The project includes database setup, data cleaning, execution of analytical queries, and the creation of detailed reports to help business owners make data-driven decisions.
-
-Project Objectives
-✅ Setting up a structured database and organizing data.
-✅ Cleaning the data and ensuring it is error-free.
-✅ Analyzing data to answer key business questions.
-✅ Creating reports to support data-driven decision-making.
-
 
 CREATE TABLE netflix_titles$
 (
